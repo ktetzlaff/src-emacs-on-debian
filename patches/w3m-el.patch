@@ -1,0 +1,31 @@
+diff --git a/install/w3m-el b/install/w3m-el
+index 804f16d..7754786 100755
+--- a/install/w3m-el
++++ b/install/w3m-el
+@@ -1,5 +1,6 @@
+ #! /bin/sh
+ # /usr/lib/emacsen-common/packages/install/w3m-el
++# patched for src-emacs-on-debian
+ set -e
+ 
+ FLAVOR=$1
+@@ -82,7 +83,8 @@ fi
+ 
+ for EMACS in $EMACSEN; do
+     cd "$ELCDIR"
+-    TOELDIR=../../../$PKGSNAME2
++    #TOELDIR=../../$PKGSNAME2
++    TOELDIR=/usr/share/$PKGSNAME2
+     case $EMACS in
+ 	*-nomule*)
+ 	if [ x"$EMACS" != x"$EMACSEN" ]; then
+@@ -95,7 +97,8 @@ for EMACS in $EMACSEN; do
+ 	fi
+ 	;;
+     esac
+-    TOELDIR2=../$TOELDIR/shimbun
++    #TOELDIR2=../$TOELDIR/shimbun
++    TOELDIR2=$TOELDIR/shimbun
+     rm -f *.elc __myinit.el
+     for f in $LINKS; do
+ 	ln -sf "$TOELDIR/$f" .

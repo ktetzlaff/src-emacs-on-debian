@@ -1,6 +1,8 @@
-#!/bin/bash
+#!/bin/bash -eu
 #
 # Restore custom-compiled emacs
+
+SCRIPT_DIR="$(dirname $(realpath ${BASH_SOURCE[0]}))"
 
 if test ! -d ./lisp/emacs-lisp; then
     echo "You are not in the right directory."
@@ -12,22 +14,39 @@ if test "$UID" != "0"; then
     exit 1
 fi
 
+EMACS_SRC_DIR="$(pwd)"
+
 echo "Stage 1: Installing emacs ..."
 make install
+echo "Stage 1: Done."
 
 echo "Stage 2: Install fake emacs-snapshot package ..."
-dpkg -i emacs-snapshot_1.0_all.deb
+dpkg -i "${SCRIPT_DIR}/emacs-snapshot_1.0_all.deb"
+echo "Stage 2: Done."
 
-echo "Done."
-echo "Stage 3: Making symlinks ..."
-latest=$(cd /usr/local/share/emacs && echo 2[3456789].* | tr ' ' '\n' | sort \
-    | tail -n 1)
-ln -sfn /usr/local/share/emacs/$latest /usr/share/emacs-snapshot
+VERSION="$(realpath /usr/local/bin/emacs | cut -d - -f 2)"
+echo "Stage 3: Making symlinks for emacs version ${VERSION} ..."
+ln -sfn /usr/local/share/emacs/${VERSION} /usr/share/emacs-snapshot
 ln -sf /usr/local/bin/emacs /usr/bin/emacs-snapshot
 mkdir -p /etc/emacs-snapshot/site-start.d
+echo "Stage 3: Done."
 
-echo "Done."
-echo "Stage 4: Installing emacs-snapshot flavor ..."
+echo "Stage 4: Patching emacsen-common package scripts ..."
+EMACSEN_COMMON_PACKAGE_DIR='/usr/lib/emacsen-common/packages'
+PATCHED_MARKER='^# patched for src-emacs-on-debian'
+for patch in $(ls ${SCRIPT_DIR}/patches/*.patch); do
+    TARGET="${EMACSEN_COMMON_PACKAGE_DIR}/$(sed -n 's,--- a/,,p' ${patch})"
+    if [ -e "${TARGET}" ]; then
+        if grep -q -- "${PATCHED_MARKER}" "${TARGET}"; then
+            echo "already patched: '${TARGET}'"
+        else
+            echo "patching: '${TARGET}'"
+            patch -d "${EMACSEN_COMMON_PACKAGE_DIR}" -p1 -s -r /dev/null -i "${patch}"
+        fi
+    fi
+done
+echo "Stage 4: Done."
+
+echo "Stage 5: Installing emacs-snapshot flavor ..."
 /usr/lib/emacsen-common/emacs-install emacs-snapshot
-
-echo "Done."
+echo "Stage 5: Done."

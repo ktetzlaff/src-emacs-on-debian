@@ -1,0 +1,22 @@
+diff --git a/install/emacsen-common b/install/emacsen-common
+index 4c7562f..a95fdd6 100755
+--- a/install/emacsen-common
++++ b/install/emacsen-common
+@@ -1,4 +1,5 @@
+ #!/bin/sh
++# patched for src-emacs-on-debian
+ 
+ set -e
+ 
+@@ -11,8 +12,9 @@ rm -f \
+    "/usr/share/$flavor/site-lisp/debian-startup.elc"
+ 
+ # Create symlinks to the .el files (see section 5E in debian-emacs polcy).
+-(cd "/usr/share/$flavor/site-lisp"
+- ln -s ../../emacsen-common/debian-startup.el .)
++#(cd "/usr/share/$flavor/site-lisp"
++# ln -s ../../emacsen-common/debian-startup.el .)
++ln -s /usr/share/emacs/site-lisp/debian-startup.el /usr/share/${flavor}/site-lisp/
+ 
+ "$flavor" --no-init-file --no-site-file -batch -f batch-byte-compile \
+           "/usr/share/$flavor/site-lisp/debian-startup.el"
