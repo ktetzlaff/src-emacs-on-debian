@@ -50,3 +50,7 @@ echo "Stage 4: Done."
 echo "Stage 5: Installing emacs-snapshot flavor ..."
 /usr/lib/emacsen-common/emacs-install emacs-snapshot
 echo "Stage 5: Done."
+
+echo "Stage 6: Copy debian-init.el to emacs site-lisp ..."
+cp "${SCRIPT_DIR}/debian-init.el" "/usr/local/share/emacs/${VERSION}/site-lisp/"
+echo "Stage 6: Done."
