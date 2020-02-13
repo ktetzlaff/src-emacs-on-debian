@@ -16,7 +16,7 @@ index 4c7562f..a95fdd6 100755
 - ln -s ../../emacsen-common/debian-startup.el .)
 +#(cd "/usr/share/$flavor/site-lisp"
 +# ln -s ../../emacsen-common/debian-startup.el .)
-+ln -s /usr/share/emacs/site-lisp/debian-startup.el /usr/share/${flavor}/site-lisp/
++ln -s /usr/share/emacsen-common/debian-startup.el /usr/share/${flavor}/site-lisp/
  
  "$flavor" --no-init-file --no-site-file -batch -f batch-byte-compile \
            "/usr/share/$flavor/site-lisp/debian-startup.el"
