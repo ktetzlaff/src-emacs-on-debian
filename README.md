@@ -28,6 +28,25 @@ Until the bug is fixed, a `/usr/share/emacs-snapshot/site-lisp` directory has
 to be created and added to `load-path`. This is automatically handled by
 `restore-emacs`.
 
+# Using the `restore-emacs` script
+
+``` text
+usage: restore-emacs [--help|--version] | [SRCDIR] [EMACSFLAVOR]
+
+Install Emacs from SRCDIR and register it as EMACSFLAVOR with the Emacs
+infrastructure provided by the emacsen-common Debian package.
+
+Options:
+    -h, --help
+        show this message
+    --version
+        show restore-emacs version
+    SRCDIR:
+        Emacs source directory (default: current directory)
+    EMACSFLAVOR
+        name of the installed Emacs flavor (default: emacs-snapshot)
+```
+
 # Backwards Compatibility
 
 Compared to earlier versions of `restore-emacs`, the way Emacs is integrated
