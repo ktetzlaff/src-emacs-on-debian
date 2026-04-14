@@ -34,6 +34,20 @@ fixed, `/usr/local/emacs/<version>/site-lisp` must be moved to
 `/usr/share/emacs-snapshot/site-lisp`. This is automatically handled by the
 `restore-emacs` script.
 
+# Using the restore-emacs script
+
+    usage: restore-emacs [--help] | [SRCDIR] [EMACSFLAVOR]
+    
+    Installs Emacs from SRCDIR as EMACSFLAVOR.
+    
+    Options:
+        -h, --help
+            show this message
+        SRCDIR:
+            Emacs source directory (default: current directory)
+        EMACSFLAVOR
+            name of the installed Emacs (default: emacs-snapshot)
+
 # Backwards Compatibility
 
 Compared to earlier versions of `restore-emacs`, the way Emacs is integrated

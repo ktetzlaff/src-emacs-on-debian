@@ -3,20 +3,72 @@ set -euo pipefail
 
 # restore custom-compiled emacs
 
-if test ! -d ./lisp/emacs-lisp; then
-    echo "[ERR] You are not in the right directory."
-    exit 1
-fi
-
-if test "$UID" != "0"; then
-    echo "[ERR] You must be root to run this."
-    exit 1
-fi
-
-SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 SCRIPT_NAME="${BASH_SOURCE[0]##*/}"
-EMACS_FLAVOR='emacs-snapshot'
-DEB_PACKAGE="${EMACS_FLAVOR}_1.0_all.deb"
+SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+usage() {
+    cat <<-EOU
+usage: ${SCRIPT_NAME} [--help] | [SRCDIR] [EMACSFLAVOR]
+
+Installs Emacs from SRCDIR as EMACSFLAVOR.
+
+Options:
+    -h, --help
+        show this message
+    SRCDIR:
+        Emacs source directory (default: current directory)
+    EMACSFLAVOR
+        name of the installed Emacs (default: emacs-snapshot)
+EOU
+}
+
+
+DEB_PACKAGE="emacs-snapshot_1.0_all.deb"
+_emacs_marker='lisp/startup.el'
+
+EMACS_SRC_DIR="${PWD}"
+EMACS_FLAVOR="emacs-snapshot"
+while [ ${#} -gt 0 ]; do
+    case "${1}" in
+        -h | -\? | --help)
+            usage
+            exit 0
+            ;;
+        -*)
+            echo "[ERR] unsupported option: ${1@Q}"
+            echo
+            usage
+            exit 1
+            ;;
+        *)
+            if [ -f "${1:-}/${_emacs_marker}" ]; then
+                cd "${1%/}"
+                EMACS_SRC_DIR="${PWD}"
+            else
+                EMACS_FLAVOR="${1}"
+            fi
+            ;;
+    esac
+    shift
+done
+
+[ -f "${EMACS_SRC_DIR}/${_emacs_marker}" ] || {
+    echo "[ERR] ${PWD@Q} is not an Emacs source tree"
+    echo
+    usage
+    exit 1
+}
+
+[ "${EUID}" = "0" ] || {
+    if command -v sudo &> /dev/null; then
+        echo "[INF] You must be root to run this, restarting with sudo ..."
+        exec sudo JOB_COUNT="${JOB_COUNT-}" \
+             "${SCRIPT_DIR}/${SCRIPT_NAME}" "${EMACS_SRC_DIR}" "${EMACS_FLAVOR}"
+    else
+        echo "[ERR] You must be root to run this."
+        exit 1
+    fi
+}
 
 SRC_SHARE_DIR="/usr/local/share/emacs"
 DST_SHARE_DIR="/usr/share/${EMACS_FLAVOR}"
@@ -26,6 +78,15 @@ echo "[INF] Stage 1: Use 'make' to build/install Emacs from source tree ..."
 if [ -L "${SRC_SHARE_DIR}/site-lisp" ] &&
    [ "$(realpath "${SRC_SHARE_DIR}/site-lisp")" != "${DST_SHARE_DIR}/site-lisp" ]; then
     rm -v "${SRC_SHARE_DIR}/site-lisp"
+fi
+if [ -n "${SUDO_USER}" ]; then
+    # When running under sudo, build Emacs as original user to avoid creating
+    # build artefacts as superuser.
+    #
+    # Unfortunately, `make --question` doesn't work with the Emacs build system,
+    # otherwise we could check if a (re-)build is required.
+    [ -v JOB_COUNT ] || JOB_COUNT="$(($(nproc 2>/dev/null || echo 0)+1))"
+    sudo -u "${SUDO_USER}" make "${JOB_COUNT:+--jobs=${JOB_COUNT}}"
 fi
 make install
 VERSION="$(realpath /usr/local/bin/emacs | cut -d'-' -f2)"
@@ -138,6 +199,8 @@ echo "[INF] Stage 5: Install/update ${DST_SITE_START@Q} ..."
 # order to load '/usr/share/<emacs-flavor>/site-lisp/debian-startup.el' and run
 # the elisp `debian-startup' function during Emacs startup
 install --mode 644 --verbose "${SCRIPT_DIR}/site-start.el" "${DST_SITE_START}"
+# update `debian-emacs-flavor'
+sed -i -E "s,emacs-snapshot,${EMACS_FLAVOR}," "${DST_SITE_START}"
 echo "[INF] Stage 5: Done."
 echo
 
