@@ -34,6 +34,22 @@ In emacsen-common, until the bug is fixed,
 `/usr/share/emacs-snapshot/site-lisp`. This is automatically handled by the
 `restore-emacs` script.
 
+# Using the `restore-emacs` script
+
+``` text
+usage: restore-emacs [--help] | [SRCDIR] [EMACSFLAVOR]
+
+Installs Emacs from SRCDIR as EMACSFLAVOR.
+
+Options:
+    -h, --help
+        show this message
+    SRCDIR:
+        Emacs source directory (default: current directory)
+    EMACSFLAVOR
+        name of the installed Emacs (default: emacs-snapshot)
+```
+
 # Backwards Compatibility
 
 Compared to earlier versions of `restore-emacs`, the way Emacs is integrated
@@ -46,8 +62,8 @@ tested for backwards compatibility. However, if you have previously used the
   `restore-emacs` just creates a symbolic link from `/etc/emacs-snapshot`
   to `/etc/emacs`.
 * `/usr/share/emacs-snapshot`: Previously, this was a symbolic link to
-  `/usr/local/share/emacs/<version>`. Now, it is a local directory containing a
-  `site-start` directory and a symbolic link to
+  `/usr/local/share/emacs/<version>`. Now, it is a local directory containing
+  a `site-start` directory and a symbolic link to
   `/usr/local/share/emacs/<version>`.
 * `/usr/local/share/emacs/site-lisp`: Is now a symbolic link to
   `/usr/share/emacs-snapshot/site-start`.
