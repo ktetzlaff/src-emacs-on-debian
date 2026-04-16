@@ -12,17 +12,18 @@ if test "$UID" != "0"; then
     exit 1
 fi
 
+SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
 echo "Stage 1: Installing emacs ..."
 make install
+VERSION="$(realpath /usr/local/bin/emacs | cut -d'-' -f2)"
 
 echo "Stage 2: Install fake emacs-snapshot package ..."
-dpkg -i emacs-snapshot_1.0_all.deb
+dpkg -i "${SCRIPT_DIR}/emacs-snapshot_1.0_all.deb"
 
 echo "Done."
 echo "Stage 3: Making symlinks ..."
-latest=$(cd /usr/local/share/emacs && echo 2[3456789].* | tr ' ' '\n' | sort \
-    | tail -n 1)
-ln -sfn /usr/local/share/emacs/$latest /usr/share/emacs-snapshot
+ln -sfn "/usr/local/share/emacs/${VERSION}" /usr/share/emacs-snapshot
 ln -sf /usr/local/bin/emacs /usr/bin/emacs-snapshot
 mkdir -p /etc/emacs-snapshot/
 ln -sf /etc/emacs/site-start.d /etc/emacs-snapshot/

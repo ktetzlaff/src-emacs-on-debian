@@ -1,6 +1,15 @@
 # ChangeLog
 
-## [?.?](https://github.com/ktetzlaff/src-emacs-on-debian/compare/0.3...fixes-and-improvements-for-debian-bullseye-and-later) (2026-05-??)
+## [?.?](https://github.com/ktetzlaff/src-emacs-on-debian/compare/0.4...fixes-and-improvements-for-debian-bullseye-and-later) (2026-05-??)
+
+## [0.4](https://github.com/ktetzlaff/src-emacs-on-debian/compare/0.3...0.4) (2026-05-15)
+
+Bugfix release.
+
+### Bug Fixes
+
+- Fix version detection for Emacs versions >= 30.0.
+- Always install `emacs-snapshot_1.0_all.deb` from the directory which contains the `restore-emacs` script.
 
 ### Documentation
 
