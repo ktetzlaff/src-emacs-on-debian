@@ -1,8 +1,8 @@
 # Integrating Emacs built from source into Debian
 
 N.B.: If you use this package, you should purge it before upgrading your
-distribution, because otherwise it is likely to break the upgrade process:
-the `emacs` binary may well depend on library versions that are removed by the
+distribution, because otherwise it is likely to break the upgrade process: the
+`emacs` binary may well depend on library versions that are removed by the
 upgrade, and hence the emacsen-common hooks will fail!
 
 This git repository contains some useful resources for integrating
@@ -24,21 +24,39 @@ There are two parts to this kit:
 
 Also, see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=840793
 
-In `emacsen-common`, until the bug is fixed,
-`/usr/lib/emacsen-common/packages/install/emacsen-common` must be patched to
-make the integration into `emacsen-common` work. The following applies to
-`emacsen-common` 3.0.8, lines 14–15:
+Until the bug is fixed, a `/usr/share/emacs-snapshot/site-lisp` directory has
+to be created and added to `load-path`. This is automatically handled by
+`restore-emacs`.
 
-```
-(cd /usr/share/${flavor}/site-lisp
-  ln -s ../../emacsen-common/debian-startup.el .)
-```
+# Backwards Compatibility
 
-   should be replaced with:
+Compared to earlier versions of `restore-emacs`, the way Emacs is integrated
+into the Debian Emacs management scripts has changed. The script has been
+tested for backwards compatibility. However, if you have previously used the
+`restore-emacs` it might be worth checking the following three directories:
 
+* `/etc/emacs-snapshot`: Previously, this was a directory containing
+  `site-start.d` as a symbolic link to `/etc/emacs/site-start.d`. Now,
+  `restore-emacs` just creates a symbolic link from `/etc/emacs-snapshot`
+  to `/etc/emacs`.
+* `/usr/share/emacs-snapshot`: Previously, this was a symbolic link to
+  `/usr/local/share/emacs/<version>`. Now, it is a local directory containing
+  a `site-start` directory and a symbolic link to
+  `/usr/local/share/emacs/<version>`.
+* `/usr/local/share/emacs/site-lisp`: Is now a just a directory created during
+  Emacs installation.
+
+Normally, if you have not modified any of those directories manually and if you
+have not installed a different `emacs-snapshot` package (e.g. from the
+https://emacs.secretsauce.net/ project), it should be safe to delete them. They
+will be recreated with the new structure the next time you run `restore-emacs`.
+So, after careful checking, consider running the following:
+
+``` sh
+sudo rm -r /etc/emacs-snapshot /usr/share/emacs-snapshot \
+    /usr/local/share/emacs/site-lisp
 ```
-ln -s /usr/share/emacsen-common/debian-startup.el /usr/share/${flavor}/site-lisp/
-```
+just before using the updated `restore-emacs` script.
 
 # Former Maintainers
 
