@@ -1,4 +1,4 @@
-;;; debian-init.el --- Debian utilities
+;;; site-start.el --- Debian utilities
 
 ;;; Make sure that we have instrumented all Debian packages
 

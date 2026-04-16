@@ -15,9 +15,10 @@ Emacs built from source into Debian or derivatives like Ubuntu.
 
 There are two parts to this kit:
 
-1. You should run `debian-init.el` early in your Emacs startup process
-   (I load it immediately after setting up `load-path`). It runs
-   Debian’s Emacs init files.
+1. The local `site-start.el` will be copied to the `site-lisp`
+   directory of the newly installed Emacs. It adds Debian specific
+   initialization steps to the Emacs startup sequence. E.g. it
+   configures elisp libraries installed as Debian packages.
 
 2. `restore-emacs` should be run every time you update your Emacs
    installed from source (e.g. with `git pull`), from the top-level
