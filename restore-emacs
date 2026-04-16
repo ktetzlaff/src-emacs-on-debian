@@ -18,7 +18,15 @@ SCRIPT_NAME="${BASH_SOURCE[0]##*/}"
 EMACS_FLAVOR='emacs-snapshot'
 DEB_PACKAGE="${EMACS_FLAVOR}_1.0_all.deb"
 
+SRC_SHARE_DIR="/usr/local/share/emacs"
+DST_SHARE_DIR="/usr/share/${EMACS_FLAVOR}"
+
 echo "[INF] Stage 1: Use 'make' to build/install Emacs from source tree ..."
+# remove potential (dangling?) symlink
+if [ -L "${SRC_SHARE_DIR}/site-lisp" ] &&
+   [ "$(realpath "${SRC_SHARE_DIR}/site-lisp")" != "${DST_SHARE_DIR}/site-lisp" ]; then
+    rm -v "${SRC_SHARE_DIR}/site-lisp"
+fi
 make install
 VERSION="$(realpath /usr/local/bin/emacs | cut -d'-' -f2)"
 echo "[INF] Stage 1: Done."
@@ -30,10 +38,89 @@ echo "[INF] Stage 2: Done."
 echo
 
 echo "[INF] Stage 3: Prepare Emacs ${VERSION} flavorization as ${EMACS_FLAVOR@Q} ..."
-ln -sfn "/usr/local/share/emacs/${VERSION}" "/usr/share/${EMACS_FLAVOR}"
-ln -sf /usr/local/bin/emacs "/usr/bin/${EMACS_FLAVOR}"
-mkdir -p "/etc/${EMACS_FLAVOR}/"
-ln -sf /etc/emacs/site-start.d "/etc/${EMACS_FLAVOR}"
+# The Debian package `emacsen-common` provides infrastructure which facilitates
+# the interworking between Emacs flavors (main Emacs packages providing the
+# actual binaries) and Emacs add-on packages (e.g. elisp libraries). The
+# `emacsen-common` package provides a description of how to use this
+# infrastructure in `/usr/share/doc/emacsen-common/debian-emacs-policy.gz`.
+#
+# The `emacsen-common` scripts register installed emacsen by creating the
+# `/var/lib/emacsen-common/state/flavor/<emacs-flavor>` file. This is then used
+# to make sure that each installed 'flavored' Emacs will 'see' installed elisp
+# packages. Tha process is managed by a couple of scripts in
+# `/usr/lib/emacsen-common/`. This section of restore-emacs tries to integrate
+# the newly installed Emacs with those management scripts.
+#
+# Debian elisp packages install .el files into `/usr/share/<package-name>/`. The
+# above mentioned Emacs management scripts then install symbolic links to these
+# elisp files into `/usr/share/<emacs-flavor>/site-lisp/`. Unfortunately, some
+# of these symlinks are relative. So just creating a symbolic link from
+# `/usr/share/<emacs-flavor>` to `/usr/local/share/emacs` directory is not an
+# option.
+#
+# See also: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=840793.
+#
+# As a workaround, create `/usr/share/<emacs-flavor>` as a directory and move
+# `/usr/local/share/emacs/site-lisp` to it. Then recreate
+# `/usr/local/share/emacs/site-lisp` as a symlink to
+# `/usr/share/<emacs-flavor>/site-lisp`.
+
+if [ -L "${DST_SHARE_DIR}" ]; then
+    rm -v "${DST_SHARE_DIR}" # just a symlink, should be save to remove
+fi
+mkdir -pv "${DST_SHARE_DIR}"
+
+# exit with an error check if the (potentially) existing symlink is not what we
+# expect or, if there is no symlink, do the shuffle described above
+if [ -L "${SRC_SHARE_DIR}/site-lisp" ]; then
+    if [ "$(realpath "${SRC_SHARE_DIR}/site-lisp")" != "${DST_SHARE_DIR}/site-lisp" ]; then
+        echo "[ERR] unexpected link target of '${SRC_SHARE_DIR}/site-lisp', expected"
+        echo "[ERR] '${DST_SHARE_DIR}/site-lisp', found '$(realpath "${SRC_SHARE_DIR}/site-lisp")'"
+        echo "[ERR] please check!"
+        exit 2
+    fi
+else
+    # move common site-lisp directory to /usr/share/<emacs-flavor>/
+    mv -v "${SRC_SHARE_DIR}/site-lisp" "${DST_SHARE_DIR}/"
+    # and replace its original location with a symlink to the moved directory
+    ln -sfnv "${DST_SHARE_DIR}/site-lisp" "${SRC_SHARE_DIR}/"
+fi
+
+# link versioned emacs installation directory into /usr/share/<emacs-flavor>/
+# (not necessary, but helps understanding where /usr/share/<emacs-flavor>/
+# originates from)
+ln -sfnv "${SRC_SHARE_DIR}/${VERSION}" "${DST_SHARE_DIR}/"
+
+# remove `debian-startup.el` installed using the instructions from a previous
+# version of this project
+if [ -f "${SRC_SHARE_DIR}/${VERSION}/site-lisp/debian-startup.el" ]; then
+    rm -fv "${SRC_SHARE_DIR}/${VERSION}/site-lisp/debian-startup".*
+fi
+
+# create am ${EMACS_FLAVOR} link in /usr/bin/ which targets the (versioned)
+# emacs binary in /usr/local/bin (see debian-emacs-policy section 6)
+ln -sfv "$(realpath "/usr/local/bin/emacs")" "/usr/bin/${EMACS_FLAVOR}"
+
+# symlink /etc/<emacs-flavor> to the /etc/emacs directory to allow
+# '/usr/share/<emacs-flavor>/site-lisp/debian-startup.el' (another part of the
+# Debian Emacs infrastructure) to do its work
+if [ -L "/etc/${EMACS_FLAVOR}" ]; then
+    # check for and allow 'legacy' directory structure, but exit if current
+    # directory structure is different from what is required
+    if [ "$(realpath "/etc/${EMACS_FLAVOR}")" != "/etc/emacs" ]; then
+        echo "[ERR] unexpected link target of '${SRC_SHARE_DIR}/site-lisp', expected"
+        echo "[ERR] '${DST_SHARE_DIR}/site-lisp', found '$(realpath "${SRC_SHARE_DIR}/site-lisp")'"
+        echo "[ERR] please check!"
+        exit 3
+    fi
+elif [ -d "/etc/${EMACS_FLAVOR}" ]; then
+    if [ "$(realpath "/etc/${EMACS_FLAVOR}/site-start.d")" != "/etc/emacs/site-start.d" ]; then
+        echo "[ERR] '/etc/${EMACS_FLAVOR}' should be a symlink to '/etc/emacs', please check"
+        exit 4
+    fi
+else
+    ln -sf "emacs" "/etc/${EMACS_FLAVOR}"
+fi
 echo "[INF] Stage 3: Done."
 echo
 
