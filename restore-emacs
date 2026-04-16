@@ -1,35 +1,57 @@
-#!/bin/bash
-#
-# Restore custom-compiled emacs
+#!/usr/bin/env bash
+set -euo pipefail
+
+# restore custom-compiled emacs
 
 if test ! -d ./lisp/emacs-lisp; then
-    echo "You are not in the right directory."
+    echo "[ERR] You are not in the right directory."
     exit 1
 fi
 
 if test "$UID" != "0"; then
-    echo "You must be root to run this."
+    echo "[ERR] You must be root to run this."
     exit 1
 fi
 
 SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+SCRIPT_NAME="${BASH_SOURCE[0]##*/}"
+EMACS_FLAVOR='emacs-snapshot'
+DEB_PACKAGE="${EMACS_FLAVOR}_1.0_all.deb"
 
-echo "Stage 1: Installing emacs ..."
+echo "[INF] Stage 1: Use 'make' to build/install Emacs from source tree ..."
 make install
 VERSION="$(realpath /usr/local/bin/emacs | cut -d'-' -f2)"
+echo "[INF] Stage 1: Done."
+echo
 
-echo "Stage 2: Install fake emacs-snapshot package ..."
-dpkg -i "${SCRIPT_DIR}/emacs-snapshot_1.0_all.deb"
+echo "[INF] Stage 2: Install dummy ${DEB_PACKAGE} package ..."
+dpkg -i "${SCRIPT_DIR}/${DEB_PACKAGE}"
+echo "[INF] Stage 2: Done."
+echo
 
-echo "Done."
-echo "Stage 3: Making symlinks ..."
-ln -sfn "/usr/local/share/emacs/${VERSION}" /usr/share/emacs-snapshot
-ln -sf /usr/local/bin/emacs /usr/bin/emacs-snapshot
-mkdir -p /etc/emacs-snapshot/
-ln -sf /etc/emacs/site-start.d /etc/emacs-snapshot/
+echo "[INF] Stage 3: Prepare Emacs ${VERSION} flavorization as ${EMACS_FLAVOR@Q} ..."
+ln -sfn "/usr/local/share/emacs/${VERSION}" "/usr/share/${EMACS_FLAVOR}"
+ln -sf /usr/local/bin/emacs "/usr/bin/${EMACS_FLAVOR}"
+mkdir -p "/etc/${EMACS_FLAVOR}/"
+ln -sf /etc/emacs/site-start.d "/etc/${EMACS_FLAVOR}"
+echo "[INF] Stage 3: Done."
+echo
 
-echo "Done."
-echo "Stage 4: Installing emacs-snapshot flavor ..."
-/usr/lib/emacsen-common/emacs-install emacs-snapshot
+echo "[INF] Stage 4: Register/initialize Emacs flavor ${EMACS_FLAVOR@Q} ..."
+# run the Debian 'emacs-install' script to a) register the newly installed
+# ${EMACS_FLAVOR} with the Debian Emacs infrastructure scripts and b) add
+# already installed elisp packages to /usr/share/<emacs-flavor>/site-lisp.
+/usr/lib/emacsen-common/emacs-install "${EMACS_FLAVOR}"
+echo "[INF] Stage 4: Done."
+echo
 
-echo "Done."
+DST_SITE_START="/usr/local/share/emacs/${VERSION}/site-lisp/site-start.el"
+echo "[INF] Stage 5: Install/update ${DST_SITE_START@Q} ..."
+# copy the local site-start.el to /usr/local/share/emacs/<version>/site-lisp in
+# order to load '/usr/share/<emacs-flavor>/site-lisp/debian-startup.el' and run
+# the elisp `debian-startup' function during Emacs startup
+install --mode 644 --verbose "${SCRIPT_DIR}/site-start.el" "${DST_SITE_START}"
+echo "[INF] Stage 5: Done."
+echo
+
+echo "[INF] ${SCRIPT_NAME} finished successfully!"
