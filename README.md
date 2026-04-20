@@ -1,10 +1,5 @@
 # Integrating Emacs built from source into Debian
 
-https://rrthomas@github.com/rrthomas/src-emacs-on-debian
-
-Maintainer: Reuben Thomas <rrt@sc3d.org>  
-Author: Michael Olson <mwolson@members.fsf.org>  
-
 N.B.: If you use this package, you should purge it before upgrading your
 distribution, because otherwise it is likely to break the upgrade process:
 the `emacs` binary may well depend on library versions that are removed by the
@@ -43,3 +38,8 @@ make the integration into `emacsen-common` work. The following applies to
 ```
 ln -s /usr/share/emacsen-common/debian-startup.el /usr/share/${flavor}/site-lisp/
 ```
+
+# Former Maintainers
+
+- Reuben Thomas <rrt@sc3d.org>
+- Michael Olson <mwolson@members.fsf.org> (Author)
