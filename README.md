@@ -28,10 +28,10 @@ There are two parts to this kit:
 
 Also, see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=840793
 
-In emacsen-common 2.0.8 at least (possibly earlier), and until the bug is
-fixed, `/usr/lib/emacsen-common/packages/install/emacsen-common` must be
-patched to make installation work; in emacsen-common 3.0.4 it’s at lines
-14–15, which read:
+In `emacsen-common`, until the bug is fixed,
+`/usr/lib/emacsen-common/packages/install/emacsen-common` must be patched to
+make the integration into `emacsen-common` work. The following applies to
+`emacsen-common` 3.0.8, lines 14–15:
 
 ```
 (cd /usr/share/${flavor}/site-lisp
