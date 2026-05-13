@@ -1,6 +1,7 @@
-#!/bin/bash
-#
-# Restore custom-compiled emacs
+#!/usr/bin/env bash
+set -euo pipefail
+
+# restore custom-compiled emacs
 
 if test ! -d ./lisp/emacs-lisp; then
     echo "[ERR] You are not in the right directory."
